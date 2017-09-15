@@ -1,5 +1,11 @@
 package uk.ac.sussex.bee_labe;
 
+import android.content.Context;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -10,6 +16,12 @@ import java.util.Date;
 public class ExperimentData {
     private ArrayList<DataPoint> dataList = new ArrayList(120);
     private long startTime, endTime;
+    private String filename;
+    private Context ctx;
+
+    public ExperimentData(Context ctx) {
+        this.ctx = ctx;
+    }
 
     public void startLogging() {
         startTime = System.currentTimeMillis();
@@ -25,6 +37,16 @@ public class ExperimentData {
 
     public void clear() {
         dataList.clear();
+    }
+
+    public String saveToFile() throws IOException {
+        final String filename = "data_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date(startTime)) + ".txt";
+        File dataFile = new File(ctx.getExternalFilesDir(null), filename);
+        FileOutputStream stream = new FileOutputStream(dataFile);
+        stream.write(toString().getBytes());
+        stream.close();
+
+        return dataFile.getAbsolutePath();
     }
 
     @Override

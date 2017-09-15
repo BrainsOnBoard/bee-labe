@@ -13,11 +13,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener, View.OnClickListener {
     private static final int SENSOR_DELAY = 1000000; // µs
@@ -29,7 +25,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private boolean isRecording = false;
     private Button recButton;
     private TextView pitchView, rollView, yawView;
-    private ExperimentData data = new ExperimentData();
+    private ExperimentData data = new ExperimentData(this);
     private boolean isPaused;
 
     @Override
@@ -85,17 +81,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         data.stopLogging();
         recButton.setText("Start Recording");
 
-        String msg = data.toString();
-        final String filename = "data_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".txt";
-        File dataFile = new File(getExternalFilesDir(null), filename);
+        String msg;
         try {
-            FileOutputStream stream = new FileOutputStream(dataFile);
-            stream.write(msg.getBytes());
-            stream.close();
-        } catch (IOException e) {
-            msg = e.toString();
+            msg = "Saved data to: " + data.saveToFile();
+        } catch(IOException e) {
+            msg = "Caught exception: " + e;
         }
-        msg = dataFile.getAbsolutePath() + "\n" + msg;
 
         AlertDialog.Builder dialog = new AlertDialog.Builder(this);
         dialog.setTitle("Data");
