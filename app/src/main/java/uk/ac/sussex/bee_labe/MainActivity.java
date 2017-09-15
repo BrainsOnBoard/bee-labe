@@ -16,6 +16,8 @@ import android.widget.TextView;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener, View.OnClickListener {
     private static final int SENSOR_DELAY = 1000000; // µs
@@ -84,7 +86,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         recButton.setText("Start Recording");
 
         String msg = data.toString();
-        File dataFile = new File(getExternalFilesDir(null), "beedata.txt");
+        final String filename = "data_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".txt";
+        File dataFile = new File(getExternalFilesDir(null), filename);
         try {
             FileOutputStream stream = new FileOutputStream(dataFile);
             stream.write(msg.getBytes());
