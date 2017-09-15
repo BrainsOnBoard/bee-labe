@@ -7,6 +7,8 @@ import android.os.Bundle;
 import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
+    private static final int SENSOR_DELAY = 1000000; // µs
+
     private SensorManager mSensorManager;
     private Sensor mAccSensor, mMagSensor;
     private float[] mGravity, mGeomagnetic;
@@ -29,8 +31,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     protected void onResume() {
         super.onResume();
-        mSensorManager.registerListener(this, mAccSensor, mSensorManager.SENSOR_DELAY_NORMAL);
-        mSensorManager.registerListener(this, mMagSensor, mSensorManager.SENSOR_DELAY_NORMAL);
+        mSensorManager.registerListener(this, mAccSensor, SENSOR_DELAY, SENSOR_DELAY);
+        mSensorManager.registerListener(this, mMagSensor, SENSOR_DELAY, SENSOR_DELAY);
     }
 
     protected void onPause() {
