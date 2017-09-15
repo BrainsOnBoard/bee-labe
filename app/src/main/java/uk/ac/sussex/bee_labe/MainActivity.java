@@ -8,7 +8,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.*;
-import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener, View.OnClickListener {
     private static final int SENSOR_DELAY = 1000000; // µs
@@ -20,7 +19,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private boolean isRecording = false;
     private Button recButton;
     private TextView pitchView, rollView, yawView;
-    private ArrayList<Attitude> data = new ArrayList(100);
+    private ExperimentData data = new ExperimentData();
     private boolean isPaused;
 
     @Override
@@ -67,28 +66,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void startRecording() {
         isRecording = true;
+        data.startLogging();
         recButton.setText("Stop Recording");
     }
 
     private void stopRecording() {
         isRecording = false;
+        data.stopLogging();
         recButton.setText("Start Recording");
-
-        String dString = "";
-        for (int i = 0; i < data.size(); i++) {
-            dString += data.get(i) + "\n";
-        }
-        data.clear();
 
         AlertDialog.Builder dialog = new AlertDialog.Builder(this);
         dialog.setTitle("Data");
-        dialog.setMessage(dString);
+        dialog.setMessage(data.toString());
         dialog.setPositiveButton(" OK ", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                 dialog.dismiss();
 
             }
         });
+        data.clear();
         dialog.show();
     }
 
@@ -107,13 +103,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             float I[] = new float[9];
             boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
             if (success) {
-                float orientation[] = new float[3];
-                SensorManager.getOrientation(R, orientation);
+                float orient[] = new float[3];
+                SensorManager.getOrientation(R, orient);
 
                 if (!isPaused) {
-                    yaw = orientation[0];
-                    pitch = -orientation[1];
-                    roll = orientation[2];
+                    yaw = orient[0];
+                    pitch = -orient[1];
+                    roll = orient[2];
 
                     pitchView.setText(String.format("Pitch: %.2f°", Math.toDegrees(pitch)));
                     rollView.setText(String.format("Roll: %.2f°", Math.toDegrees(roll)));
@@ -121,24 +117,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 }
 
                 if (isRecording) {
-                    data.add(new Attitude(orientation));
+                    data.log(orient);
                 }
             }
-        }
-    }
-
-    class Attitude {
-        public float yaw, pitch, roll;
-
-        public Attitude(float[] orient) {
-            yaw = orient[0];
-            pitch = -orient[1];
-            roll = orient[2];
-        }
-
-        @Override
-        public String toString() {
-            return String.format("%.2f, %.2f, %.2f", this.yaw, this.pitch, this.roll);
         }
     }
 }
