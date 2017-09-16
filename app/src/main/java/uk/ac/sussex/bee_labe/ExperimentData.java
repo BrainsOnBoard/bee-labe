@@ -16,8 +16,9 @@ import java.util.Date;
  */
 
 public class ExperimentData {
-    private ArrayList<DataPoint> dataList = new ArrayList(120);
-    private long startTime, endTime;
+    private ArrayList<DataPoint> dataList = new ArrayList(5 * 60);
+    private long startTime;
+    private Date startDate;
     private Context ctx;
 
     public ExperimentData(Context ctx) {
@@ -25,19 +26,17 @@ public class ExperimentData {
     }
 
     public void startLogging() {
-        startTime = System.currentTimeMillis();
-    }
-
-    public void stopLogging() {
-        endTime = System.currentTimeMillis();
+        startDate = new Date();
+        startTime = System.nanoTime();
     }
 
     public void log(float[] orient) {
-        dataList.add(new DataPoint(System.currentTimeMillis() - startTime, orient));
+        dataList.add(new DataPoint(System.nanoTime(), orient));
     }
 
     public String saveToFile() throws IOException {
-        Date startDate = new Date(startTime);
+        Date endDate = new Date();
+
         final String filename = "data_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(startDate) + ".json";
         File dataFile = new File(ctx.getExternalFilesDir(null), filename);
         FileOutputStream stream = new FileOutputStream(dataFile);
@@ -45,14 +44,14 @@ public class ExperimentData {
 
         writer.beginObject();
         writer.name("startTime").value(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(startDate));
-        writer.name("endTime").value(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date(endTime)));
+        writer.name("endTime").value(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(endDate));
 
         writer.name("data");
         writer.beginArray();
         for(int i = 0; i < dataList.size(); i++) {
             DataPoint datum = dataList.get(i);
             writer.beginObject();
-            writer.name("time").value(datum.time);
+            writer.name("time").value((datum.time - startTime) / 1000000);
             writer.name("yaw").value(datum.yaw);
             writer.name("pitch").value(datum.pitch);
             writer.name("roll").value(datum.roll);
@@ -65,16 +64,6 @@ public class ExperimentData {
         dataList.clear();
 
         return dataFile.getAbsolutePath();
-    }
-
-    @Override
-    public String toString() {
-        String str = "Started at " + new Date(startTime) + "\n";
-        for (int i = 0; i < dataList.size(); i++) {
-            str += "  " + dataList.get(i) + "\n";
-        }
-        str += "Finished at " + new Date(endTime) + "\n";
-        return str;
     }
 
     class DataPoint {

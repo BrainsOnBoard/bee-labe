@@ -103,7 +103,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void stopRecording() {
         isRecording = false;
-        data.stopLogging();
         recButton.setText("Start Recording");
 
         try {
