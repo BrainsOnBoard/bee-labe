@@ -3,6 +3,7 @@ package uk.ac.sussex.bee_labe;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.Cursor;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -10,6 +11,7 @@ import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.provider.ContactsContract;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -47,11 +49,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private ExperimentData data = new ExperimentData(this);
     private Chronometer elapsedChronometer;
     private boolean isPaused;
+    private String ownerName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        ownerName = getOwnerName();
+        if (ownerName == null) {
+            ownerName = "(unknown)";
+        }
 
         recButton = (Button)findViewById(R.id.recButton);
         recButton.setOnClickListener(new View.OnClickListener() {
@@ -118,8 +126,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         try {
             showDialog("Data saved", "Saved to: " + data.saveToFile());
         } catch(IOException e) {
-            showDialog("Error", e.toString());
+            showDialog(e);
         }
+    }
+
+    private String getOwnerName() {
+        String name = null;
+        Cursor c = getContentResolver().query(ContactsContract.Profile.CONTENT_URI, null, null, null, null);
+        int index;
+        if (c.moveToFirst() && (index = c.getColumnIndex("display_name")) != -1) {
+            name = c.getString(index);
+        }
+
+        c.close();
+        return name;
     }
 
     private void shareData() {
@@ -136,7 +156,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             return;
         }
 
-        final String filename = getExternalFilesDir(null) + "/data_" + new SimpleDateFormat("yyyyMMdd").format(new Date()) + ".zip";
+        final String filename = String.format("%s/%s's data (%s).zip", getExternalFilesDir(null),
+                ownerName, new SimpleDateFormat("yyyy.MM.dd").format(new Date()));
         byte[] data = new byte[ZIP_BUFFER];
         try {
             ZipOutputStream out = new ZipOutputStream(new FileOutputStream(filename));
@@ -151,7 +172,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
             out.close();
         } catch (IOException e) {
-            showDialog("Error", e.toString());
+            showDialog(e);
             return;
         }
 
@@ -172,6 +193,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
         });
         dialog.show();
+    }
+
+    private void showDialog(Exception e) {
+        showDialog("Error", "Caught exception: " + e.toString());
     }
 
     @Override
