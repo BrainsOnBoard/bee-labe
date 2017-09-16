@@ -9,10 +9,12 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Chronometer;
 import android.widget.TextView;
 
 import java.io.BufferedInputStream;
@@ -43,6 +45,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private Button recButton;
     private TextView pitchView, rollView, yawView;
     private ExperimentData data = new ExperimentData(this);
+    private Chronometer elapsedChronometer;
     private boolean isPaused;
 
     @Override
@@ -74,6 +77,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         rollView = (TextView)findViewById(R.id.rollView);
         yawView = (TextView)findViewById(R.id.yawView);
 
+        elapsedChronometer = (Chronometer)findViewById(R.id.elapsedChronometer);
+
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mAccSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mMagSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
@@ -99,11 +104,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         isRecording = true;
         data.startLogging();
         recButton.setText("Stop Recording");
+        elapsedChronometer.setBase(SystemClock.elapsedRealtime());
+        elapsedChronometer.setVisibility(View.VISIBLE);
+        elapsedChronometer.start();
     }
 
     private void stopRecording() {
         isRecording = false;
         recButton.setText("Start Recording");
+        elapsedChronometer.setVisibility(View.INVISIBLE);
+        elapsedChronometer.stop();
 
         try {
             showDialog("Data saved", "Saved to: " + data.saveToFile());
