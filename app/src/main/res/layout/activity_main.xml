@@ -54,16 +54,25 @@
         app:layout_constraintVertical_bias="0.423" />
 
     <Button
+        android:id="@+id/shareButton"
+        android:layout_width="297dp"
+        android:layout_height="53dp"
+        android:layout_marginBottom="452dp"
+        android:text="Share My Data"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHorizontal_bias="0.505"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent" />
+
+    <Button
         android:id="@+id/recButton"
         android:layout_width="297dp"
         android:layout_height="53dp"
         android:layout_marginBottom="16dp"
         android:text="Start Recording"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHorizontal_bias="0.505"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        tools:layout_editor_absoluteY="442dp"
-        tools:layout_editor_absoluteX="47dp"
-        app:layout_constraintHorizontal_bias="0.506" />
+        app:layout_constraintRight_toRightOf="parent" />
 
 </android.support.constraint.ConstraintLayout>

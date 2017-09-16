@@ -36,10 +36,6 @@ public class ExperimentData {
         dataList.add(new DataPoint(System.currentTimeMillis() - startTime, orient));
     }
 
-    public void clear() {
-        dataList.clear();
-    }
-
     public String saveToFile() throws IOException {
         Date startDate = new Date(startTime);
         final String filename = "data_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(startDate) + ".json";
@@ -65,6 +61,8 @@ public class ExperimentData {
         writer.endArray();
         writer.endObject();
         writer.close();
+
+        dataList.clear();
 
         return dataFile.getAbsolutePath();
     }
