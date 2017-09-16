@@ -193,13 +193,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 SensorManager.getOrientation(R, orient);
 
                 if (!isPaused) {
-                    yaw = orient[0];
-                    pitch = -orient[1];
-                    roll = orient[2];
+                    yaw = (float)Math.toDegrees(orient[0]);
+                    if (yaw < 0) {
+                        yaw += 360;
+                    }
+                    pitch = (float)Math.toDegrees(-orient[1]);
+                    roll = (float)Math.toDegrees(orient[2]);
 
-                    pitchView.setText(String.format("Pitch: %.2f°", Math.toDegrees(pitch)));
-                    rollView.setText(String.format("Roll: %.2f°", Math.toDegrees(roll)));
-                    yawView.setText(String.format("Yaw: %.2f°", Math.toDegrees(yaw)));
+                    yawView.setText(String.format("Yaw: %.2f°", yaw));
+                    pitchView.setText(String.format("Pitch: %.2f°", pitch));
+                    rollView.setText(String.format("Roll: %.2f°", roll));
                 }
 
                 if (isRecording) {

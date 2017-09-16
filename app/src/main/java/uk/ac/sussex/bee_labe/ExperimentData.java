@@ -73,6 +73,9 @@ public class ExperimentData {
         public DataPoint(long time, float[] orient) {
             this.time = time;
             yaw = orient[0];
+            if (yaw < 0) {
+                yaw += 2 * Math.PI;
+            }
             pitch = -orient[1];
             roll = orient[2];
         }
