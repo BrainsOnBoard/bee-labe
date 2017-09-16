@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/Bee-labe.iml" filepath="$PROJECT_DIR$/Bee-labe.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/bee-labe.iml" filepath="$PROJECT_DIR$/bee-labe.iml" />
     </modules>
   </component>
 </project>
