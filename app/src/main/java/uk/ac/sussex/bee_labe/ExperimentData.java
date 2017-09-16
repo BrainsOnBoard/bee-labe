@@ -1,10 +1,12 @@
 package uk.ac.sussex.bee_labe;
 
 import android.content.Context;
+import android.util.JsonWriter;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -16,7 +18,6 @@ import java.util.Date;
 public class ExperimentData {
     private ArrayList<DataPoint> dataList = new ArrayList(120);
     private long startTime, endTime;
-    private String filename;
     private Context ctx;
 
     public ExperimentData(Context ctx) {
@@ -40,11 +41,30 @@ public class ExperimentData {
     }
 
     public String saveToFile() throws IOException {
-        final String filename = "data_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date(startTime)) + ".txt";
+        Date startDate = new Date(startTime);
+        final String filename = "data_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(startDate) + ".json";
         File dataFile = new File(ctx.getExternalFilesDir(null), filename);
         FileOutputStream stream = new FileOutputStream(dataFile);
-        stream.write(toString().getBytes());
-        stream.close();
+        JsonWriter writer = new JsonWriter(new OutputStreamWriter(stream, "UTF-8"));
+
+        writer.beginObject();
+        writer.name("startTime").value(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(startDate));
+        writer.name("endTime").value(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date(endTime)));
+
+        writer.name("data");
+        writer.beginArray();
+        for(int i = 0; i < dataList.size(); i++) {
+            DataPoint datum = dataList.get(i);
+            writer.beginObject();
+            writer.name("time").value(datum.time);
+            writer.name("yaw").value(datum.yaw);
+            writer.name("pitch").value(datum.pitch);
+            writer.name("roll").value(datum.roll);
+            writer.endObject();
+        }
+        writer.endArray();
+        writer.endObject();
+        writer.close();
 
         return dataFile.getAbsolutePath();
     }
