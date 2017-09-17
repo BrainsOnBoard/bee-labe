@@ -124,7 +124,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         elapsedChronometer.stop();
 
         try {
-            showDialog("Data saved", "Saved to: " + data.saveToFile());
+            showDialog("Data saved", "Saved to: " + data.saveToFile(ownerName));
         } catch(IOException e) {
             showDialog(e);
         }

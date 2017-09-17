@@ -34,10 +34,19 @@ public class ExperimentData {
         dataList.add(new DataPoint(System.nanoTime(), orient));
     }
 
-    public String saveToFile() throws IOException {
+    public String saveToFile(String ownerName) throws IOException {
         Date endDate = new Date();
 
-        final String filename = "data_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(startDate) + ".json";
+        int space = ownerName.indexOf(' ');
+        String initials;
+        if (space != -1 && space+1 < ownerName.length()) {
+            initials = new String(new char[] {ownerName.charAt(0), ownerName.charAt(space+1)});
+        } else {
+            initials = ownerName;
+        }
+        final String filename = String.format("data_%s_%s.json", new SimpleDateFormat("yyyyMMdd_HHmmss").format(startDate),
+                initials);
+
         File dataFile = new File(ctx.getExternalFilesDir(null), filename);
         FileOutputStream stream = new FileOutputStream(dataFile);
         JsonWriter writer = new JsonWriter(new OutputStreamWriter(stream, "UTF-8"));
@@ -45,6 +54,7 @@ public class ExperimentData {
         writer.beginObject();
         writer.name("startTime").value(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(startDate));
         writer.name("endTime").value(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(endDate));
+        writer.name("experimenter").value(ownerName);
 
         writer.name("data");
         writer.beginArray();
