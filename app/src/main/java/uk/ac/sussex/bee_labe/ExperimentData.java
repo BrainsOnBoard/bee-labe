@@ -1,6 +1,7 @@
 package uk.ac.sussex.bee_labe;
 
 import android.content.Context;
+import android.os.Build;
 import android.util.JsonWriter;
 
 import java.io.File;
@@ -35,8 +36,10 @@ public class ExperimentData {
     }
 
     public String saveToFile(String ownerName) throws IOException {
+        // date and time at which this "trial" ended
         Date endDate = new Date();
 
+        // work out phone owner's initials (we could also probably get this directly somehow)
         int space = ownerName.indexOf(' ');
         String initials;
         if (space != -1 && space+1 < ownerName.length()) {
@@ -44,22 +47,36 @@ public class ExperimentData {
         } else {
             initials = ownerName;
         }
+
+        // filename is composed of the end date, time and owner's initials
         final String filename = String.format("data_%s_%s.json", new SimpleDateFormat("yyyyMMdd_HHmmss").format(startDate),
                 initials);
 
+        // save file to external storage
         File dataFile = new File(ctx.getExternalFilesDir(null), filename);
         FileOutputStream stream = new FileOutputStream(dataFile);
-        JsonWriter writer = new JsonWriter(new OutputStreamWriter(stream, "UTF-8"));
 
+        // save data as JSON
+        JsonWriter writer = new JsonWriter(new OutputStreamWriter(stream, "UTF-8"));
         writer.beginObject();
+
+        // save start and end time as dates
         writer.name("startTime").value(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(startDate));
         writer.name("endTime").value(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(endDate));
+
+        // save phone owner's name
         writer.name("experimenter").value(ownerName);
 
+        // this probably won't get the right model, but at least the manufacturer should be right
+        writer.name("phone_model").value(Build.MANUFACTURER + " " + Build.MODEL);
+
+        // begin writing data array
         writer.name("data");
         writer.beginArray();
         for(int i = 0; i < dataList.size(); i++) {
             DataPoint datum = dataList.get(i);
+
+            // write timestamp and attitude for each data point, as JSON object
             writer.beginObject();
             writer.name("time").value((datum.time - startTime) / 1000000);
             writer.name("yaw").value(datum.yaw);
@@ -67,12 +84,15 @@ public class ExperimentData {
             writer.name("roll").value(datum.roll);
             writer.endObject();
         }
+        // end of data array and of file
         writer.endArray();
         writer.endObject();
         writer.close();
 
+        // delete data from memory so we can start over
         dataList.clear();
 
+        // return the file path for display
         return dataFile.getAbsolutePath();
     }
 
