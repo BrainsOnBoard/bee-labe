@@ -58,6 +58,7 @@ public class ExperimentData {
 
         // save data as JSON
         JsonWriter writer = new JsonWriter(new OutputStreamWriter(stream, "UTF-8"));
+        writer.setIndent("  ");
         writer.beginObject();
 
         // save start and end time as dates
