@@ -33,8 +33,8 @@ public class CalibrationHandler {
         if (yaw < 0) {
             yaw += 2 * Math.PI;
         }
-        float pitch = -orient[1] - this.pitch;
-        float roll = orient[2] - this.roll;
+        float pitch = normalizeAngle(-orient[1] - this.pitch);
+        float roll = normalizeAngle(orient[2] - this.roll);
 
         Attitude att = new Attitude(yaw, pitch, roll);
 
@@ -53,6 +53,17 @@ public class CalibrationHandler {
         }
 
         return att;
+    }
+
+    private float normalizeAngle(float f) {
+        if (f < 0) {
+            f += 2 * Math.PI;
+        }
+        f %= 2 * Math.PI;
+        if (f > Math.PI) {
+            f -= 2 * Math.PI;
+        }
+        return f;
     }
 
     private void calculateOffsets() {
