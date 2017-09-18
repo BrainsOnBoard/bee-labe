@@ -136,6 +136,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             case Sensor.TYPE_MAGNETIC_FIELD:
                 mGeomagnetic = event.values;
                 break;
+            default:
+                return;
         }
         if (mGravity != null && mGeomagnetic != null) {
             float R[] = new float[9];
