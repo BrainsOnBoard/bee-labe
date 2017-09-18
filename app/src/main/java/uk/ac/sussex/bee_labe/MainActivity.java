@@ -21,18 +21,13 @@ import android.widget.Chronometer;
 import android.widget.TextView;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -43,14 +38,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private SensorManager mSensorManager;
     private Sensor mAccSensor, mMagSensor;
     private float[] mGravity, mGeomagnetic;
-    private float yaw, pitch, roll;
-    private boolean isRecording = false;
-    private Button recButton;
-    private TextView pitchView, rollView, yawView;
+    private Button recButton, calButton;
+    private TextView infoTextView;
     private ExperimentData data = new ExperimentData(this);
     private Chronometer elapsedChronometer;
-    private boolean isPaused;
+    private boolean isPaused, isRecording = false;
     private String ownerName;
+    public CalibrationHandler cal = new CalibrationHandler(this);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,6 +73,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
         });
 
+        calButton = (Button)findViewById(R.id.calButton);
+        calButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startCalibration();
+            }
+        });
+
         Button shareButton = (Button)findViewById(R.id.shareButton);
         shareButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -87,9 +89,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
         });
 
-        pitchView = (TextView)findViewById(R.id.pitchView);
-        rollView = (TextView)findViewById(R.id.rollView);
-        yawView = (TextView)findViewById(R.id.yawView);
+        infoTextView = (TextView)findViewById(R.id.infoTextView);
 
         elapsedChronometer = (Chronometer)findViewById(R.id.elapsedChronometer);
 
@@ -109,14 +109,58 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         super.onPause();
         isPaused = true;
 
-        if (!isRecording) {
+        // disable sensors if neither calibrating nor recording
+        if (!isRecording && !cal.isCalibrating) {
             mSensorManager.unregisterListener(this);
         }
     }
 
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER)
+            mGravity = event.values;
+        if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD)
+            mGeomagnetic = event.values;
+        if (mGravity != null && mGeomagnetic != null) {
+            float R[] = new float[9];
+            float I[] = new float[9];
+            boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
+            if (success) {
+                float orient[] = new float[3];
+                SensorManager.getOrientation(R, orient);
+                Attitude att = cal.getAttitude(orient);
+
+                if (!isPaused) {
+                    infoTextView.setText(att.toString());
+                }
+                if (isRecording) {
+                    data.log(att);
+                }
+            }
+        }
+    }
+
+    private void startCalibration() {
+        if (!cal.isCalibrating) {
+            recButton.setEnabled(false);
+            cal.start();
+            calButton.setText("Calibrating");
+        }
+    }
+
+    public void stopCalibration() {
+        calButton.setText("Calibrated");
+        recButton.setEnabled(true);
+    }
+
     private void startRecording() {
+        calButton.setEnabled(false);
         isRecording = true;
-        data.startLogging();
+        data.start();
         recButton.setText("Stop Recording");
         elapsedChronometer.setBase(SystemClock.elapsedRealtime());
         elapsedChronometer.setVisibility(View.VISIBLE);
@@ -128,24 +172,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         recButton.setText("Start Recording");
         elapsedChronometer.setVisibility(View.INVISIBLE);
         elapsedChronometer.stop();
+        calButton.setEnabled(true);
 
         try {
             showDialog("Data saved", "Saved to: " + data.saveToFile(ownerName));
         } catch(IOException e) {
             showDialog(e);
         }
-    }
-
-    private String getOwnerName() {
-        String name = null;
-        Cursor c = getContentResolver().query(ContactsContract.Profile.CONTENT_URI, null, null, null, null);
-        int index;
-        if (c.moveToFirst() && (index = c.getColumnIndex("display_name")) != -1) {
-            name = c.getString(index);
-        }
-
-        c.close();
-        return name;
     }
 
     private void shareData() {
@@ -189,7 +222,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         startActivity(Intent.createChooser(shareIntent, "Share data files"));
     }
 
-    private void showDialog(String title, String msg) {
+    public void showDialog(String title, String msg) {
         AlertDialog.Builder dialog = new AlertDialog.Builder(this);
         dialog.setTitle(title);
         dialog.setMessage(msg.toString());
@@ -201,45 +234,19 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         dialog.show();
     }
 
-    private void showDialog(Exception e) {
+    public void showDialog(Exception e) {
         showDialog("Error", "Caught exception: " + e.toString());
     }
 
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-    }
-
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER)
-            mGravity = event.values;
-        if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD)
-            mGeomagnetic = event.values;
-        if (mGravity != null && mGeomagnetic != null) {
-            float R[] = new float[9];
-            float I[] = new float[9];
-            boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
-            if (success) {
-                float orient[] = new float[3];
-                SensorManager.getOrientation(R, orient);
-
-                if (!isPaused) {
-                    yaw = (float)Math.toDegrees(orient[0]);
-                    if (yaw < 0) {
-                        yaw += 360;
-                    }
-                    pitch = (float)Math.toDegrees(-orient[1]);
-                    roll = (float)Math.toDegrees(orient[2]);
-
-                    yawView.setText(String.format("Yaw: %.2f°", yaw));
-                    pitchView.setText(String.format("Pitch: %.2f°", pitch));
-                    rollView.setText(String.format("Roll: %.2f°", roll));
-                }
-
-                if (isRecording) {
-                    data.log(orient);
-                }
-            }
+    private String getOwnerName() {
+        String name = null;
+        Cursor c = getContentResolver().query(ContactsContract.Profile.CONTENT_URI, null, null, null, null);
+        int index;
+        if (c.moveToFirst() && (index = c.getColumnIndex("display_name")) != -1) {
+            name = c.getString(index);
         }
+
+        c.close();
+        return name;
     }
 }

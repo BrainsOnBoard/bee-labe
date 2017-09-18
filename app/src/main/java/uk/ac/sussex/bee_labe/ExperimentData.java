@@ -20,19 +20,19 @@ public class ExperimentData {
     private ArrayList<DataPoint> dataList = new ArrayList(5 * 60);
     private long startTime;
     private Date startDate;
-    private Context ctx;
+    private MainActivity main;
 
-    public ExperimentData(Context ctx) {
-        this.ctx = ctx;
+    public ExperimentData(MainActivity main) {
+        this.main = main;
     }
 
-    public void startLogging() {
+    public void start() {
         startDate = new Date();
         startTime = System.nanoTime();
     }
 
-    public void log(float[] orient) {
-        dataList.add(new DataPoint(System.nanoTime(), orient));
+    public void log(Attitude attitude) {
+        dataList.add(new DataPoint(System.nanoTime(), attitude));
     }
 
     public String saveToFile(String ownerName) throws IOException {
@@ -53,7 +53,7 @@ public class ExperimentData {
                 initials);
 
         // save file to external storage
-        File dataFile = new File(ctx.getExternalFilesDir(null), filename);
+        File dataFile = new File(main.getExternalFilesDir(null), filename);
         FileOutputStream stream = new FileOutputStream(dataFile);
 
         // save data as JSON
@@ -71,6 +71,13 @@ public class ExperimentData {
         // this probably won't get the right model, but at least the manufacturer should be right
         writer.name("phone_model").value(Build.MANUFACTURER + " " + Build.MODEL);
 
+        // save calibration data to file
+        writer.name("calibration");
+        writer.beginObject();
+        writer.name("pitch").value(main.cal.pitch);
+        writer.name("roll").value(main.cal.roll);
+        writer.endObject();
+
         // begin writing data array
         writer.name("data");
         writer.beginArray();
@@ -80,9 +87,9 @@ public class ExperimentData {
             // write timestamp and attitude for each data point, as JSON object
             writer.beginObject();
             writer.name("time").value((datum.time - startTime) / 1000000);
-            writer.name("yaw").value(datum.yaw);
-            writer.name("pitch").value(datum.pitch);
-            writer.name("roll").value(datum.roll);
+            writer.name("yaw").value(datum.attitude.yaw);
+            writer.name("pitch").value(datum.attitude.pitch);
+            writer.name("roll").value(datum.attitude.roll);
             writer.endObject();
         }
         // end of data array and of file
@@ -99,21 +106,11 @@ public class ExperimentData {
 
     class DataPoint {
         private long time;
-        private float yaw, pitch, roll;
+        private Attitude attitude;
 
-        public DataPoint(long time, float[] orient) {
+        public DataPoint(long time, Attitude attitude) {
             this.time = time;
-            yaw = orient[0];
-            if (yaw < 0) {
-                yaw += 2 * Math.PI;
-            }
-            pitch = -orient[1];
-            roll = orient[2];
-        }
-
-        @Override
-        public String toString() {
-            return String.format("%d: %.2f, %.2f, %.2f", this.time, this.yaw, this.pitch, this.roll);
+            this.attitude = attitude;
         }
     }
 }
