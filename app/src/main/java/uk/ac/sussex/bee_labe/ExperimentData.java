@@ -1,6 +1,7 @@
 package uk.ac.sussex.bee_labe;
 
 import android.content.Context;
+import android.hardware.Sensor;
 import android.os.Build;
 import android.util.JsonWriter;
 
@@ -8,6 +9,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -17,7 +19,8 @@ import java.util.Date;
  */
 
 public class ExperimentData {
-    private ArrayList<DataPoint> dataList = new ArrayList(5 * 60);
+    private ArrayList<DataPoint> dataList = new ArrayList(1000);
+    private ArrayList<RawData> rawDataList = new ArrayList(1000);
     private long startTime;
     private Date startDate;
     private MainActivity main;
@@ -33,6 +36,10 @@ public class ExperimentData {
 
     public void log(Attitude attitude) {
         dataList.add(new DataPoint(System.nanoTime(), attitude));
+    }
+
+    public void logRaw(int sensorType, float[] values) {
+        rawDataList.add(new RawData(System.nanoTime(), sensorType, values));
     }
 
     public String saveToFile(String ownerName) throws IOException {
@@ -92,25 +99,75 @@ public class ExperimentData {
             writer.name("roll").value(datum.attitude.roll);
             writer.endObject();
         }
-        // end of data array and of file
+        // end of data array
         writer.endArray();
+
+        // save raw data if we have it
+        if (rawDataList.size() > 0) {
+            writer.name("raw_data");
+            writer.beginArray();
+            for (int i = 0; i < rawDataList.size(); i++) {
+                RawData data = rawDataList.get(i);
+
+                writer.beginObject();
+                writer.name("time").value((data.time - startTime) / 1000000);
+                writer.name("type");
+                switch (data.sensorType) {
+                    case Sensor.TYPE_ACCELEROMETER:
+                        writer.value("acc");
+                        break;
+                    case Sensor.TYPE_MAGNETIC_FIELD:
+                        writer.value("mag");
+                        break;
+                    case Sensor.TYPE_GYROSCOPE:
+                        writer.value("gyro");
+                        break;
+                    default:
+                        writer.value("unknown");
+                }
+
+                writer.name("values");
+                writer.beginArray();
+                for(float f : data.values) {
+                    writer.value(f);
+                }
+                writer.endArray();
+                writer.endObject();
+            }
+            writer.endArray();
+        }
+
+        // end of file
         writer.endObject();
         writer.close();
 
         // delete data from memory so we can start over
         dataList.clear();
+        rawDataList.clear();
 
         // return the file path for display
         return dataFile.getAbsolutePath();
     }
 
     class DataPoint {
-        private long time;
-        private Attitude attitude;
+        long time;
+        Attitude attitude;
 
         public DataPoint(long time, Attitude attitude) {
             this.time = time;
             this.attitude = attitude;
+        }
+    }
+
+    class RawData {
+        long time;
+        int sensorType;
+        float[] values;
+
+        public RawData(long time, int sensorType, float[] values) {
+            this.time = time;
+            this.sensorType = sensorType;
+            this.values = values;
         }
     }
 }

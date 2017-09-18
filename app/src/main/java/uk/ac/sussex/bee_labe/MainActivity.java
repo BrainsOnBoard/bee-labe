@@ -34,9 +34,10 @@ import java.util.zip.ZipOutputStream;
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
     private static final int SENSOR_DELAY = 1000000; // µs
     private static final int ZIP_BUFFER = 2048; // bytes
+    private static final boolean LOG_RAW = true;
 
     private SensorManager mSensorManager;
-    private Sensor mAccSensor, mMagSensor;
+    private Sensor mAccSensor, mMagSensor, mGyroSensor;
     private float[] mGravity, mGeomagnetic;
     private Button recButton, calButton;
     private TextView infoTextView;
@@ -96,6 +97,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mAccSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mMagSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        mGyroSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
     }
 
     protected void onResume() {
@@ -103,6 +105,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         isPaused = false;
         mSensorManager.registerListener(this, mAccSensor, SENSOR_DELAY, SENSOR_DELAY);
         mSensorManager.registerListener(this, mMagSensor, SENSOR_DELAY, SENSOR_DELAY);
+        mSensorManager.registerListener(this, mGyroSensor, SENSOR_DELAY, SENSOR_DELAY);
     }
 
     protected void onPause() {
@@ -121,10 +124,19 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER)
-            mGravity = event.values;
-        if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD)
-            mGeomagnetic = event.values;
+        int type = event.sensor.getType();
+        if (LOG_RAW && isRecording) {
+            data.logRaw(type, event.values);
+        }
+
+        switch (type) {
+            case Sensor.TYPE_ACCELEROMETER:
+                mGravity = event.values;
+                break;
+            case Sensor.TYPE_MAGNETIC_FIELD:
+                mGeomagnetic = event.values;
+                break;
+        }
         if (mGravity != null && mGeomagnetic != null) {
             float R[] = new float[9];
             float I[] = new float[9];
