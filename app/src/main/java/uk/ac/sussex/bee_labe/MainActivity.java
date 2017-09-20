@@ -32,7 +32,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
-    private static final int SENSOR_DELAY = 1000000; // µs
+    private static final int SENSOR_DELAY = 50000; // µs
     private static final int ZIP_BUFFER = 2048; // bytes
     private static final boolean LOG_RAW = true;
 
