@@ -1,0 +1,2 @@
+- don't stop recording when phone is rotated
+- add way to delete files
