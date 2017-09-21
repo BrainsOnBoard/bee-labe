@@ -16,6 +16,9 @@ import android.os.SystemClock;
 import android.provider.ContactsContract;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -48,6 +51,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private boolean isPaused, isRecording = false;
     private String ownerName;
     private Handler mHandlerRec;
+    private Toolbar appToolbar;
     public CalibrationHandler cal = new CalibrationHandler(this);
 
     @Override
@@ -116,6 +120,55 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 calButton.setEnabled(true);
             }
         };
+
+        appToolbar = (Toolbar)findViewById(R.id.appToolbar);
+        setSupportActionBar(appToolbar);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_delete_files:
+                deleteFiles();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private void deleteFiles() {
+        final File dir = getExternalFilesDir(null);
+        final String[] children = dir.list();
+        if (children.length == 0) {
+            showDialog("Error", "No files found to delete");
+            return;
+        }
+
+        String msg = "Are you sure you want to delete the following files?\n";
+        for (String s : children) {
+            msg += "\n- " + s;
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(msg).setNegativeButton("No", null)
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                for (String s : children) {
+                    File f = new File(dir, s);
+                    if (f.isFile()) {
+                        f.delete();
+                    }
+                }
+            }
+        }).show();
     }
 
     protected void onResume() {
