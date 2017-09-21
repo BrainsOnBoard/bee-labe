@@ -22,6 +22,7 @@ end
 d = dir(path);
 for i = 1:length(d)
     filename = fullfile(dname,d(i).name);
+    fprintf('Loading %s (%d/%d)...\n', filename, i, length(d));
     
     % use appropriate function to load JSON, then turn data into cleaner
     % format
