@@ -49,5 +49,5 @@ for i = 1:length(d)
     end
     
     % get the new data struct minus the data field
-    datafile(i) = rmfield(data,'data');
+    datafile(i) = rmfield(data,{'data','raw_data'});
 end
