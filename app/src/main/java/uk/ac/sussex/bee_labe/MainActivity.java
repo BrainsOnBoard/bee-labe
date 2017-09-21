@@ -10,6 +10,8 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.os.SystemClock;
 import android.provider.ContactsContract;
 import android.support.v7.app.AlertDialog;
@@ -45,6 +47,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private Chronometer elapsedChronometer;
     private boolean isPaused, isRecording = false;
     private String ownerName;
+    private Handler mHandlerRec;
     public CalibrationHandler cal = new CalibrationHandler(this);
 
     @Override
@@ -98,6 +101,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mAccSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mMagSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         mGyroSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+
+        mHandlerRec = new Handler() {
+            @Override
+            public void handleMessage(Message inputMessage) {
+                try {
+                    showDialog("Data saved", "Saved to: " + data.saveToFile(ownerName));
+                } catch(IOException e) {
+                    showDialog(e);
+                }
+
+                recButton.setText("Start Recording");
+                recButton.setEnabled(true);
+                calButton.setEnabled(true);
+            }
+        };
     }
 
     protected void onResume() {
@@ -183,16 +201,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void stopRecording() {
         isRecording = false;
-        recButton.setText("Start Recording");
+        recButton.setEnabled(false);
+        recButton.setText("Saving data...");
         elapsedChronometer.setVisibility(View.INVISIBLE);
         elapsedChronometer.stop();
-        calButton.setEnabled(true);
 
-        try {
-            showDialog("Data saved", "Saved to: " + data.saveToFile(ownerName));
-        } catch(IOException e) {
-            showDialog(e);
-        }
+        mHandlerRec.sendEmptyMessage(0);
     }
 
     private void shareData() {
